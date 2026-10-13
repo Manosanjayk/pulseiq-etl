@@ -1,0 +1,88 @@
+{
+  "run_started_utc": "2026-10-12T17:18:14.847667+00:00",
+  "datasets": {
+    "dim_date": {
+      "input_rows": 2557,
+      "duplicates_removed": 0,
+      "output_rows": 2557,
+      "rejected_rows": 0,
+      "source_file": "data/raw/dim_date.csv",
+      "clean_file": "data/clean/dim_date.csv",
+      "rejected_file": null
+    },
+    "dim_department": {
+      "input_rows": 11,
+      "duplicates_removed": 0,
+      "output_rows": 11,
+      "rejected_rows": 0,
+      "source_file": "data/raw/dim_department.csv",
+      "clean_file": "data/clean/dim_department.csv",
+      "rejected_file": null
+    },
+    "dim_leave_type": {
+      "input_rows": 6,
+      "duplicates_removed": 0,
+      "output_rows": 6,
+      "rejected_rows": 0,
+      "source_file": "data/raw/dim_leave_type.csv",
+      "clean_file": "data/clean/dim_leave_type.csv",
+      "rejected_file": null
+    },
+    "dim_location": {
+      "input_rows": 9,
+      "duplicates_removed": 0,
+      "output_rows": 9,
+      "rejected_rows": 0,
+      "source_file": "data/raw/dim_location.csv",
+      "clean_file": "data/clean/dim_location.csv",
+      "rejected_file": null
+    },
+    "dim_role": {
+      "input_rows": 58,
+      "duplicates_removed": 0,
+      "output_rows": 58,
+      "rejected_rows": 0,
+      "source_file": "data/raw/dim_role.csv",
+      "clean_file": "data/clean/dim_role.csv",
+      "rejected_file": null
+    },
+    "dim_employee": {
+      "input_rows": 1606,
+      "duplicates_removed": 0,
+      "output_rows": 1606,
+      "rejected_rows": 0,
+      "source_file": "data/raw/dim_employee.csv",
+      "clean_file": "data/clean/dim_employee.csv",
+      "rejected_file": null
+    },
+    "fact_attendance_monthly": {
+      "input_rows": 7343,
+      "duplicates_removed": 0,
+      "output_rows": 7343,
+      "rejected_rows": 0,
+      "source_file": "data/raw/fact_attendance_monthly.csv",
+      "clean_file": "data/clean/fact_attendance_monthly.csv",
+      "rejected_file": null
+    },
+    "fact_leave": {
+      "input_rows": 3441,
+      "duplicates_removed": 0,
+      "output_rows": 3439,
+      "rejected_rows": 2,
+      "source_file": "data/raw/fact_leave.csv",
+      "clean_file": "data/clean/fact_leave.csv",
+      "rejected_file": "rejected/fact_leave_rejected.csv"
+    },
+    "fact_payroll": {
+      "input_rows": 7344,
+      "duplicates_removed": 0,
+      "output_rows": 7342,
+      "rejected_rows": 2,
+      "source_file": "data/raw/fact_payroll.csv",
+      "clean_file": "data/clean/fact_payroll.csv",
+      "rejected_file": "rejected/fact_payroll_rejected.csv"
+    }
+  },
+  "status": "success",
+  "run_finished_utc": "2026-10-12T17:18:18.316990+00:00"
+}
