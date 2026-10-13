@@ -1,0 +1,7 @@
+leave_type_code,leave_type_name,pay_type,annual_quota_days,prorated_for_joiners,carry_forward_allowed,max_carry_forward_days,policy_note
+CL,Casual Leave,Paid,12,Y,N,0,Short-notice personal leave
+SL,Sick Leave,Paid,12,Y,N,0,Illness; medical certificate needed beyond 2 days
+EL,Earned (Privilege) Leave,Paid,15,Y,Y,30,Accrues 1.25 days per month; carry forward up to 30 days
+ML,Maternity Leave,Paid,182,N,N,0,Statutory maternity benefit (26 weeks)
+BL,Bereavement Leave,Paid,3,N,N,0,Up to 3 days per event
+LOP,Loss of Pay,Unpaid,0,N,N,0,Unpaid leave; deducted from salary on a calendar-day basis
