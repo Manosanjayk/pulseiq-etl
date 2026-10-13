@@ -1,0 +1,3 @@
+leave_request_id,employee_id,employee_key,leave_type_code,start_date_key,end_date_key,start_date,end_date,days,status,applied_on,decided_on,approver_id,reason,rejection_reason
+LR-000025,EMP-0006,100030,EL,20260219,20260220,2026-02-20,2026-02-19,2,Rejected,2026-02-16,2026-02-17,,Visa / document work,start_date is after end_date
+LR-002286,EMP-0489,101250,SL,20260323,20260324,2026-03-24,2026-03-23,2,Approved,2026-03-20,2026-03-23,EMP-0206,Personal work,start_date is after end_date
