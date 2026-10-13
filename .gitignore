@@ -1,0 +1,14 @@
+.env
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+data/raw/*
+data/clean/*
+rejected/*
+logs/*
+!logs/.gitkeep
+!logs/run_summary_20261013T035313Z.json
+!logs/test_results_20261013T035313Z.txt
