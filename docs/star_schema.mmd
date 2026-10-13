@@ -1,0 +1,70 @@
+erDiagram
+    dim_department ||--o{ dim_role : contains
+    dim_department ||--o{ dim_employee : employs
+    dim_role ||--o{ dim_employee : assigns
+    dim_location ||--o{ dim_employee : locates
+    dim_employee ||--o{ dim_employee : manages
+    dim_employee ||--o{ fact_attendance_monthly : versions
+    dim_employee ||--o{ fact_payroll : versions
+    dim_employee ||--o{ fact_leave : versions
+    dim_date ||--o{ fact_attendance_monthly : dates
+    dim_date ||--o{ fact_payroll : dates
+    dim_date ||--o{ fact_leave : spans
+    dim_leave_type ||--o{ fact_leave : classifies
+    dim_department ||--o{ fact_headcount_monthly : snapshots
+
+    dim_department {
+        text department_id PK
+        text department_name
+    }
+    dim_role {
+        text role_id PK
+        text department_id FK
+        text role_title
+    }
+    dim_employee {
+        bigint employee_sk PK
+        bigint source_employee_key UK
+        text employee_id
+        text department_id FK
+        text role_id FK
+        date valid_from
+        date valid_to
+        boolean is_current
+    }
+    dim_date {
+        integer date_key PK
+        date date_value UK
+        text year_month
+    }
+    dim_leave_type {
+        text leave_type_code PK
+        text pay_type
+    }
+    fact_attendance_monthly {
+        text attendance_fact_id PK
+        bigint employee_sk FK
+        date period_end_date
+        numeric present_days
+        numeric scheduled_days
+    }
+    fact_payroll {
+        text payroll_item_id PK
+        bigint employee_sk FK
+        text run_id
+        numeric gross_pay
+        numeric employer_cost
+    }
+    fact_leave {
+        text leave_request_id PK
+        bigint employee_sk FK
+        text leave_type_code FK
+        date start_date
+        date end_date
+    }
+    fact_headcount_monthly {
+        date month_end_date PK
+        text department_id PK
+        integer employee_count
+        integer attrition_count
+    }

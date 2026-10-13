@@ -59,7 +59,7 @@ The command stops before processing source data if any functional test fails. Th
 
 All metric calculations exclude rows rejected by ETL validation. Update the dictionary and this section together if these business definitions change.
 
-Latest successful Docker verification recorded during this submission review: `logs/run_summary_20261012T165619Z.json` (2026-10-12 16:56 UTC). It completed the ETL run with status `success`; the combined verification command ran the functional suites before processing the source tables.
+Latest supplied successful Docker verification: `logs/run_summary_20261013T035313Z.json` (2026-10-13 03:53 UTC). It completed the ETL run with status `success`; preserved test evidence is `logs/test_results_20261013T035313Z.txt`.
 
 ## Tests
 
@@ -76,3 +76,55 @@ python -m pytest tests/test_docker.py -q
 ```
 
 The tests import pandas and Pandera directly. A missing/broken runtime dependency fails test collection; functional tests are not skipped. Install dependencies with `python -m pip install -r requirements.txt` when package access is available.
+
+## Task 2: PostgreSQL Analytics Warehouse
+
+Task 2 adds a separate PostgreSQL 16 dimensional warehouse. Task 1 remains the source-validation pipeline and its existing commands remain independent.
+
+### Start, migrate, and load
+
+Copy `.env.example` to `.env` and replace the local placeholder passwords before exposing PostgreSQL on a network. The defaults are intended only for local development.
+
+```bash
+docker compose up -d warehouse
+docker compose run --build --rm warehouse-load
+```
+
+The loader applies versioned files in `sql/migrations/`, reads accepted outputs from `data/clean/`, and records Task 1 rejects from `rejected/`. Run Task 1 first when clean outputs are missing or stale:
+
+```bash
+docker compose run --build --rm etl
+```
+
+The PostgreSQL service waits for its health check before the loading service starts. Warehouse data persists in the named `warehouse_data` volume. The loader is transactional and can be rerun safely for the same source snapshot.
+
+### Tests and inspection
+
+```bash
+docker compose run --build --rm etl-test
+docker compose run --build --rm warehouse-test
+docker compose run --build --rm etl-verify
+```
+
+Run the complete Task 1 and Task 2 test suite together (the Docker smoke test is skipped inside the application container because it has no Docker CLI):
+
+```bash
+docker compose run --build --rm warehouse-test python -m pytest -q
+```
+
+`warehouse-test` uses a separate `pulseiq_warehouse_test` PostgreSQL service with ephemeral storage; tests refuse any database whose name does not end in `_test`. To reset only that dedicated test database, remove and recreate the test service:
+
+```bash
+docker compose rm -sf warehouse-test-db
+docker compose up -d warehouse-test-db
+docker compose run --build --rm warehouse-test
+```
+
+Inspect the application warehouse from the host after PostgreSQL is healthy:
+
+```bash
+docker compose exec warehouse psql -U pulseiq -d pulseiq_warehouse -c "SELECT status, source_counts, accepted_counts, rejected_counts, reconciliation FROM warehouse_batch ORDER BY batch_id DESC LIMIT 5;"
+docker compose exec warehouse psql -U pulseiq -d pulseiq_warehouse -f /opt/pulseiq/sql/analytics_queries.sql
+```
+
+Analytics examples and key definitions are in [sql/analytics_queries.sql](sql/analytics_queries.sql) and [docs/star_schema.md](docs/star_schema.md). The Mermaid relationship diagram is [docs/star_schema.mmd](docs/star_schema.mmd). The absent Excel workbook and workbook-only answer-key sheets are noted in the schema documentation; the loader reconciles against independently calculated accepted CSV totals instead.

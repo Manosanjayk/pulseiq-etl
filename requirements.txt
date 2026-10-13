@@ -4,3 +4,4 @@ pyarrow==18.1.0
 python-dotenv==1.0.1
 openpyxl==3.1.5
 pytest==8.3.5
+psycopg[binary]==3.2.6
