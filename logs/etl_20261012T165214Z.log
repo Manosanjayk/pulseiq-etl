@@ -1,0 +1,21 @@
+2026-10-12 16:52:14,829Z INFO ETL run started: 2026-10-12T16:52:14.829355+00:00
+2026-10-12 16:52:14,876Z INFO Extracted 2557 rows from data/raw/dim_date.csv
+2026-10-12 16:52:15,163Z INFO Dataset dim_date: {"input_rows": 2557, "duplicates_removed": 0, "output_rows": 2557, "rejected_rows": 0, "source_file": "data/raw/dim_date.csv", "clean_file": "data/clean/dim_date.csv", "rejected_file": null}
+2026-10-12 16:52:15,176Z INFO Extracted 11 rows from data/raw/dim_department.csv
+2026-10-12 16:52:15,216Z INFO Dataset dim_department: {"input_rows": 11, "duplicates_removed": 0, "output_rows": 11, "rejected_rows": 0, "source_file": "data/raw/dim_department.csv", "clean_file": "data/clean/dim_department.csv", "rejected_file": null}
+2026-10-12 16:52:15,232Z INFO Extracted 6 rows from data/raw/dim_leave_type.csv
+2026-10-12 16:52:15,289Z INFO Dataset dim_leave_type: {"input_rows": 6, "duplicates_removed": 0, "output_rows": 6, "rejected_rows": 0, "source_file": "data/raw/dim_leave_type.csv", "clean_file": "data/clean/dim_leave_type.csv", "rejected_file": null}
+2026-10-12 16:52:15,298Z INFO Extracted 9 rows from data/raw/dim_location.csv
+2026-10-12 16:52:15,341Z INFO Dataset dim_location: {"input_rows": 9, "duplicates_removed": 0, "output_rows": 9, "rejected_rows": 0, "source_file": "data/raw/dim_location.csv", "clean_file": "data/clean/dim_location.csv", "rejected_file": null}
+2026-10-12 16:52:15,353Z INFO Extracted 58 rows from data/raw/dim_role.csv
+2026-10-12 16:52:15,487Z INFO Dataset dim_role: {"input_rows": 58, "duplicates_removed": 0, "output_rows": 58, "rejected_rows": 0, "source_file": "data/raw/dim_role.csv", "clean_file": "data/clean/dim_role.csv", "rejected_file": null}
+2026-10-12 16:52:15,515Z INFO Extracted 1606 rows from data/raw/dim_employee.csv
+2026-10-12 16:52:15,835Z INFO Dataset dim_employee: {"input_rows": 1606, "duplicates_removed": 0, "output_rows": 1606, "rejected_rows": 0, "source_file": "data/raw/dim_employee.csv", "clean_file": "data/clean/dim_employee.csv", "rejected_file": null}
+2026-10-12 16:52:15,871Z INFO Extracted 7343 rows from data/raw/fact_attendance_monthly.csv
+2026-10-12 16:52:16,357Z INFO Dataset fact_attendance_monthly: {"input_rows": 7343, "duplicates_removed": 0, "output_rows": 7343, "rejected_rows": 0, "source_file": "data/raw/fact_attendance_monthly.csv", "clean_file": "data/clean/fact_attendance_monthly.csv", "rejected_file": null}
+2026-10-12 16:52:16,382Z INFO Extracted 3441 rows from data/raw/fact_leave.csv
+2026-10-12 16:52:16,699Z INFO Dataset fact_leave: {"input_rows": 3441, "duplicates_removed": 0, "output_rows": 3439, "rejected_rows": 2, "source_file": "data/raw/fact_leave.csv", "clean_file": "data/clean/fact_leave.csv", "rejected_file": "rejected/fact_leave_rejected.csv"}
+2026-10-12 16:52:16,783Z INFO Extracted 7344 rows from data/raw/fact_payroll.csv
+2026-10-12 16:52:17,943Z INFO Dataset fact_payroll: {"input_rows": 7344, "duplicates_removed": 0, "output_rows": 7342, "rejected_rows": 2, "source_file": "data/raw/fact_payroll.csv", "clean_file": "data/clean/fact_payroll.csv", "rejected_file": "rejected/fact_payroll_rejected.csv"}
+2026-10-12 16:52:17,944Z INFO ETL run completed successfully
+2026-10-12 16:52:17,949Z INFO Run summary written to logs/run_summary_20261012T165214Z.json
