@@ -1,0 +1,15 @@
+services:
+  etl:
+    build: .
+    environment:
+      RAW_DIR: ${RAW_DIR:-data/raw}
+      CLEAN_DIR: ${CLEAN_DIR:-data/clean}
+      REJECTED_DIR: ${REJECTED_DIR:-rejected}
+      LOG_DIR: ${LOG_DIR:-logs}
+      OUTPUT_FORMAT: ${OUTPUT_FORMAT:-csv}
+      AS_OF_DATE: ${AS_OF_DATE:-2026-10-12}
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./rejected:/app/rejected
+    command: ["python", "src/etl.py"]
