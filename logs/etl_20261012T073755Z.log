@@ -1,0 +1,10 @@
+2026-10-12 07:37:55,688Z INFO ETL run started: 2026-10-12T07:37:55.688159+00:00
+2026-10-12 07:37:55,693Z ERROR ETL run failed: Missing input for 'employees' in data/raw. Expected employees.csv/.xlsx/.parquet
+Traceback (most recent call last):
+  File "/app/src/etl.py", line 185, in main
+    path = find_input(dataset)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/app/src/etl.py", line 43, in find_input
+    raise FileNotFoundError(f"Missing input for '{dataset}' in {RAW_DIR}. Expected {dataset}.csv/.xlsx/.parquet")
+FileNotFoundError: Missing input for 'employees' in data/raw. Expected employees.csv/.xlsx/.parquet
+2026-10-12 07:37:55,702Z INFO Run summary written to logs/run_summary_20261012T073755Z.json
