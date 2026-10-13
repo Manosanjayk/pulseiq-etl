@@ -1,0 +1,7 @@
+{
+  "run_started_utc": "2026-10-12T07:36:47.919567+00:00",
+  "datasets": {},
+  "status": "failed",
+  "error": "FileNotFoundError: Missing input for 'employees' in data/raw. Expected employees.csv/.xlsx/.parquet",
+  "run_finished_utc": "2026-10-12T07:36:47.927746+00:00"
+}
