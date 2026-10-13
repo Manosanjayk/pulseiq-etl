@@ -1,0 +1,52 @@
+{
+  "run_started_utc": "2026-10-12T07:46:39.267862+00:00",
+  "datasets": {
+    "employees": {
+      "input_rows": 2,
+      "duplicates_removed": 0,
+      "output_rows": 2,
+      "rejected_rows": 0,
+      "source_file": "data/raw/employees.csv",
+      "clean_file": "data/clean/employees.csv",
+      "rejected_file": null
+    },
+    "salary": {
+      "input_rows": 2,
+      "duplicates_removed": 0,
+      "output_rows": 2,
+      "rejected_rows": 0,
+      "source_file": "data/raw/salary.csv",
+      "clean_file": "data/clean/salary.csv",
+      "rejected_file": null
+    },
+    "attendance": {
+      "input_rows": 2,
+      "duplicates_removed": 0,
+      "output_rows": 2,
+      "rejected_rows": 0,
+      "source_file": "data/raw/attendance.csv",
+      "clean_file": "data/clean/attendance.csv",
+      "rejected_file": null
+    },
+    "leave": {
+      "input_rows": 2,
+      "duplicates_removed": 0,
+      "output_rows": 2,
+      "rejected_rows": 0,
+      "source_file": "data/raw/leave.csv",
+      "clean_file": "data/clean/leave.csv",
+      "rejected_file": null
+    },
+    "payroll": {
+      "input_rows": 2,
+      "duplicates_removed": 0,
+      "output_rows": 2,
+      "rejected_rows": 0,
+      "source_file": "data/raw/payroll.csv",
+      "clean_file": "data/clean/payroll.csv",
+      "rejected_file": null
+    }
+  },
+  "status": "success",
+  "run_finished_utc": "2026-10-12T07:46:39.445974+00:00"
+}
