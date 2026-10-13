@@ -1,0 +1,10 @@
+work_location,state,city_tier,tier_number
+Bengaluru,Karnataka,Tier 1,1
+Chennai,Tamil Nadu,Tier 1,1
+Hyderabad,Telangana,Tier 1,1
+Pune,Maharashtra,Tier 1,1
+Mumbai,Maharashtra,Tier 1,1
+Delhi NCR,Delhi,Tier 1,1
+Coimbatore,Tamil Nadu,Tier 2,2
+Kochi,Kerala,Tier 2,2
+Erode,Tamil Nadu,Tier 3,3
