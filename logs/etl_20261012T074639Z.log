@@ -1,0 +1,13 @@
+2026-10-12 07:46:39,267Z INFO ETL run started: 2026-10-12T07:46:39.267862+00:00
+2026-10-12 07:46:39,277Z INFO Extracted 2 rows from data/raw/employees.csv
+2026-10-12 07:46:39,317Z INFO Dataset employees: {"input_rows": 2, "duplicates_removed": 0, "output_rows": 2, "rejected_rows": 0, "source_file": "data/raw/employees.csv", "clean_file": "data/clean/employees.csv", "rejected_file": null}
+2026-10-12 07:46:39,326Z INFO Extracted 2 rows from data/raw/salary.csv
+2026-10-12 07:46:39,353Z INFO Dataset salary: {"input_rows": 2, "duplicates_removed": 0, "output_rows": 2, "rejected_rows": 0, "source_file": "data/raw/salary.csv", "clean_file": "data/clean/salary.csv", "rejected_file": null}
+2026-10-12 07:46:39,367Z INFO Extracted 2 rows from data/raw/attendance.csv
+2026-10-12 07:46:39,386Z INFO Dataset attendance: {"input_rows": 2, "duplicates_removed": 0, "output_rows": 2, "rejected_rows": 0, "source_file": "data/raw/attendance.csv", "clean_file": "data/clean/attendance.csv", "rejected_file": null}
+2026-10-12 07:46:39,393Z INFO Extracted 2 rows from data/raw/leave.csv
+2026-10-12 07:46:39,414Z INFO Dataset leave: {"input_rows": 2, "duplicates_removed": 0, "output_rows": 2, "rejected_rows": 0, "source_file": "data/raw/leave.csv", "clean_file": "data/clean/leave.csv", "rejected_file": null}
+2026-10-12 07:46:39,422Z INFO Extracted 2 rows from data/raw/payroll.csv
+2026-10-12 07:46:39,444Z INFO Dataset payroll: {"input_rows": 2, "duplicates_removed": 0, "output_rows": 2, "rejected_rows": 0, "source_file": "data/raw/payroll.csv", "clean_file": "data/clean/payroll.csv", "rejected_file": null}
+2026-10-12 07:46:39,445Z INFO ETL run completed successfully
+2026-10-12 07:46:39,448Z INFO Run summary written to logs/run_summary_20261012T074639Z.json
