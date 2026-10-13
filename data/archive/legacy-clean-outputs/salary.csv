@@ -1,0 +1,3 @@
+employee_id,salary_amount,effective_date,currency
+MOCK001,72000,2026-01-01,USD
+MOCK002,58000,2026-01-01,USD
