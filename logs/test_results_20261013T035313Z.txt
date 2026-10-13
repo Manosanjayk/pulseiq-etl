@@ -1,0 +1,16 @@
+Project verification evidence for PulseIQ ETL
+
+Reference run summary:
+- logs/run_summary_20261013T035313Z.json
+- Status: success
+- Run started: 2026-10-13T03:53:13.115953+00:00
+- Run finished: 2026-10-13T03:53:16.020884+00:00
+
+README reference:
+- README.md
+
+Docker-based test command:
+- docker run --rm pulseiq-etl-test:local python -m pytest -q
+
+Result:
+- 29 passed, 1 skipped in 38.06s
