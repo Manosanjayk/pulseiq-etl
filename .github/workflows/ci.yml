@@ -15,6 +15,8 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    env:
+      PYTHONPATH: ${{ github.workspace }}
 
     services:
       postgres:
@@ -62,3 +64,4 @@ jobs:
       - name: Run Docker CLI tests
         run: |
           pytest -v tests/test_docker.py
+
