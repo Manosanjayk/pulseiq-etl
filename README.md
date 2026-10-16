@@ -128,3 +128,36 @@ docker compose exec warehouse psql -U pulseiq -d pulseiq_warehouse -f /opt/pulse
 ```
 
 Analytics examples and key definitions are in [sql/analytics_queries.sql](sql/analytics_queries.sql) and [docs/star_schema.md](docs/star_schema.md). The Mermaid relationship diagram is [docs/star_schema.mmd](docs/star_schema.mmd). The absent Excel workbook and workbook-only answer-key sheets are noted in the schema documentation; the loader reconciles against independently calculated accepted CSV totals instead.
+
+## Task 3: REST API
+
+Task 3 provides a lightweight Flask service (`src/api.py`) exposing core analytics endpoints backed by the PostgreSQL warehouse:
+
+- `GET /health`: Health check returning `{"status": "ok"}`.
+- `GET /payroll_by_dept`: Monthly gross pay, employer cost, and employee counts grouped by department. Accepts `start_date` and `end_date` (ISO format `YYYY-MM-DD`, inclusive start and exclusive end), and optional `department_id`.
+- `GET /attendance_rate`: Monthly attendance rate, present days, and scheduled days grouped by department. Accepts `start_date`, `end_date`, and optional `department_id`.
+- `GET /approved_leave`: Monthly approved leave days. Accepts `start_date` and `end_date`.
+
+### Running the API
+
+Start the API service via Docker Compose:
+
+```bash
+docker compose up -d api
+```
+
+The service is configured with a healthcheck and connects to PostgreSQL using `WAREHOUSE_DATABASE_URL` (or falls back to `WAREHOUSE_TEST_DATABASE_URL` / local default).
+
+### Running API Tests
+
+Execute the API test suite with Docker Compose:
+
+```bash
+docker compose run --build --rm api-test
+```
+
+Or run locally with pytest:
+
+```bash
+python -m pytest -v tests/test_api.py
+```

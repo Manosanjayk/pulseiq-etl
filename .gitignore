@@ -14,3 +14,6 @@ logs/*
 !logs/.gitkeep
 !logs/run_summary_20261013T035313Z.json
 !logs/test_results_20261013T035313Z.txt
+
+scratch/
+audit_task2_v2.py
