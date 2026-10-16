@@ -496,3 +496,178 @@ def test_nine_table_contract_declares_primary_keys_and_exact_schemas(etl_module)
     for dataset in DATASETS:
         assert etl_module.PRIMARY_KEYS[dataset] in etl_module.DATASET_COLUMNS[dataset]
         assert len(etl_module.DATASET_COLUMNS[dataset]) == len(set(etl_module.DATASET_COLUMNS[dataset]))
+
+
+def test_duplicate_payroll_business_key_is_row_rejection(etl_module, synthetic_frames) -> None:
+    payroll = synthetic_frames["fact_payroll"].copy()
+    duplicate_item = payroll.iloc[0].copy()
+    duplicate_item["payroll_item_id"] = "PI-DUP"
+    duplicate_item["gross_pay"] = "99999"
+    combined = pd.concat([payroll, pd.DataFrame([duplicate_item])], ignore_index=True)
+
+    clean, rejected, stats = etl_module.clean_dataset("fact_payroll", combined)
+
+    assert len(clean) == 1
+    assert clean.iloc[0]["payroll_item_id"] == "PI-1"
+    assert len(rejected) == 1
+    assert rejected.iloc[0]["payroll_item_id"] == "PI-DUP"
+    assert "duplicate (employee_id, run_id)" in rejected.iloc[0]["rejection_reason"]
+    assert stats["input_rows"] == 2
+    assert stats["output_rows"] == 1
+    assert stats["rejected_rows"] == 1
+
+
+def test_attendance_after_exit_month_is_rejected(etl_module, synthetic_frames) -> None:
+    employees = synthetic_frames["dim_employee"].copy()
+    # EMP-0001 exited in January 2025
+    employees.loc[0, "exit_date"] = "2025-01-15"
+
+    attendance = synthetic_frames["fact_attendance_monthly"].copy()
+    late_att = attendance.iloc[0].copy()
+    late_att["attendance_fact_id"] = "FA-LATE"
+    late_att["date_key"] = "20250228"
+    late_att["period_end_date"] = "2025-02-28"
+
+    feb_date = pd.DataFrame([{
+        "date": "2025-02-28", "date_key": "20250228", "year": "2025", "quarter": "1",
+        "month_number": "2", "month_name": "February", "year_month": "2025-02",
+        "week_of_year": "9", "day_of_week": "Friday", "is_weekend": "N", "is_holiday": "N",
+        "is_working_day": "Y", "financial_year": "FY2024-25", "fiscal_quarter": "Q4",
+        "fiscal_month_number": "11", "is_month_end": "Y", "month_start_date": "2025-02-01",
+        "month_end_date": "2025-02-28"
+    }])
+    dates = pd.concat([synthetic_frames["dim_date"], feb_date], ignore_index=True)
+
+    clean, rejected, stats = etl_module.clean_dataset("fact_attendance_monthly", pd.DataFrame([late_att]))
+    processed = {
+        "dim_employee": employees,
+        "dim_date": dates,
+        "dim_department": synthetic_frames["dim_department"],
+    }
+    clean, rejected = etl_module.apply_relationship_checks("fact_attendance_monthly", clean, rejected, stats, processed)
+
+
+    assert clean.empty
+    assert len(rejected) == 1
+    assert rejected.iloc[0]["attendance_fact_id"] == "FA-LATE"
+    assert "attendance recorded after employee exit month" in rejected.iloc[0]["rejection_reason"]
+
+
+def test_payroll_duplicate_business_key_end_to_end_pipeline(tmp_path, synthetic_frames) -> None:
+    """End-to-end regression: duplicate (employee_id, run_id) with a different payroll_item_id
+    must be rejected through the full ETL pipeline (mimics the PI-X0001 / PI-X0002 pattern).
+    """
+    frames = {dataset: frame.copy() for dataset, frame in synthetic_frames.items()}
+    payroll = frames["fact_payroll"].copy()
+
+    # First duplicate: same (employee_id, run_id) as PI-1 but a different payroll_item_id.
+    dup1 = payroll.iloc[0].copy()
+    dup1["payroll_item_id"] = "PI-XDUP1"
+    dup1["gross_pay"] = "99999"  # differs, so it is NOT an exact-row duplicate
+
+    # Second duplicate pair: same employee, a different run duplicated.
+    original2 = payroll.iloc[0].copy()
+    original2["payroll_item_id"] = "PI-ORIG2"
+    original2["run_id"] = "PR-2025-02"  # distinct run from PI-1
+
+    dup2 = original2.copy()
+    dup2["payroll_item_id"] = "PI-XDUP2"
+    dup2["gross_pay"] = "88888"
+
+    frames["fact_payroll"] = pd.concat(
+        [payroll, pd.DataFrame([dup1, original2, dup2])], ignore_index=True
+    )
+    write_inputs(tmp_path / "raw", frames)
+
+    result = run_pipeline(tmp_path / "raw", tmp_path / "out")
+
+    assert result.returncode == 0, result.stdout + result.stderr
+    clean = pd.read_csv(tmp_path / "out" / "clean" / "fact_payroll.csv", dtype=str)
+    rejected = pd.read_csv(tmp_path / "out" / "rejected" / "fact_payroll_rejected.csv", dtype=str)
+
+    clean_ids = clean["payroll_item_id"].tolist()
+    rejected_ids = rejected["payroll_item_id"].tolist()
+
+    # Originals survive in clean output.
+    assert "PI-1" in clean_ids
+    assert "PI-ORIG2" in clean_ids
+
+    # Duplicates are absent from clean output.
+    assert "PI-XDUP1" not in clean_ids
+    assert "PI-XDUP2" not in clean_ids
+
+    # Duplicates appear in rejected output with the correct reason.
+    assert "PI-XDUP1" in rejected_ids
+    assert "PI-XDUP2" in rejected_ids
+    for dup_id in ("PI-XDUP1", "PI-XDUP2"):
+        reason = rejected.loc[rejected["payroll_item_id"] == dup_id, "rejection_reason"].values[0]
+        assert "duplicate (employee_id, run_id) payroll record" in reason, (
+            f"{dup_id}: unexpected rejection reason: {reason!r}"
+        )
+
+    # No duplicate (employee_id, run_id) remain in the clean output.
+    dup_key_mask = clean.duplicated(subset=["employee_id", "run_id"], keep=False)
+    assert not dup_key_mask.any(), (
+        "Duplicate business keys still in clean: "
+        + str(clean.loc[dup_key_mask, ["payroll_item_id", "employee_id", "run_id"]].to_dict("records"))
+    )
+
+    # Row-count reconciliation: raw = duplicates_removed + clean + rejected.
+    stats = read_summary(tmp_path / "out")["datasets"]["fact_payroll"]
+    assert stats["input_rows"] == stats["duplicates_removed"] + stats["output_rows"] + stats["rejected_rows"]
+
+
+def test_actual_payroll_outputs_reject_pi_x001_and_pi_x002() -> None:
+    """Regression: after ETL execution the real output files must reject PI-X0001 and PI-X0002
+    as duplicate-business-key records while keeping PI-004059 and PI-000761 in the clean output.
+    PI-X0003 and PI-X0004 must remain rejected for unknown employee_key reference.
+    """
+    clean_path = REPO_ROOT / "data" / "clean" / "fact_payroll.csv"
+    rejected_path = REPO_ROOT / "rejected" / "fact_payroll_rejected.csv"
+    assert clean_path.is_file(), (
+        f"Clean payroll CSV not found at {clean_path}. "
+        "Run the ETL pipeline first: docker compose -f compose.yaml run --rm etl"
+    )
+    assert rejected_path.is_file(), (
+        f"Rejected payroll CSV not found at {rejected_path}. "
+        "Run the ETL pipeline first."
+    )
+
+    clean = pd.read_csv(clean_path, dtype=str)
+    rejected = pd.read_csv(rejected_path, dtype=str)
+
+    clean_ids = set(clean["payroll_item_id"].tolist())
+    rejected_ids = set(rejected["payroll_item_id"].tolist())
+
+    # Duplicate-pair extras must NOT be in the clean output.
+    assert "PI-X0001" not in clean_ids, "PI-X0001 (duplicate of PI-004059) must not be in clean output"
+    assert "PI-X0002" not in clean_ids, "PI-X0002 (duplicate of PI-000761) must not be in clean output"
+
+    # Original records of those pairs must be in the clean output.
+    assert "PI-004059" in clean_ids, "PI-004059 (original) must be in clean output"
+    assert "PI-000761" in clean_ids, "PI-000761 (original) must be in clean output"
+
+    # No duplicate (employee_id, run_id) keys in clean output.
+    dup_mask = clean.duplicated(subset=["employee_id", "run_id"], keep=False)
+    assert not dup_mask.any(), (
+        "Duplicate (employee_id, run_id) keys found in clean CSV: "
+        + str(clean.loc[dup_mask, ["payroll_item_id", "employee_id", "run_id"]].to_dict("records"))
+    )
+
+    # PI-X0001 and PI-X0002 must appear in rejected output with the duplicate reason.
+    assert "PI-X0001" in rejected_ids, "PI-X0001 must appear in rejected output"
+    assert "PI-X0002" in rejected_ids, "PI-X0002 must appear in rejected output"
+    for pid in ("PI-X0001", "PI-X0002"):
+        reason = rejected.loc[rejected["payroll_item_id"] == pid, "rejection_reason"].values[0]
+        assert "duplicate (employee_id, run_id) payroll record" in reason, (
+            f"{pid}: expected duplicate rejection reason, got: {reason!r}"
+        )
+
+    # PI-X0003 and PI-X0004 must remain rejected for unknown employee_key reference.
+    assert "PI-X0003" in rejected_ids, "PI-X0003 must appear in rejected output"
+    assert "PI-X0004" in rejected_ids, "PI-X0004 must appear in rejected output"
+    for pid in ("PI-X0003", "PI-X0004"):
+        reason = rejected.loc[rejected["payroll_item_id"] == pid, "rejection_reason"].values[0]
+        assert "unknown employee_key reference" in reason, (
+            f"{pid}: expected unknown employee_key rejection, got: {reason!r}"
+        )

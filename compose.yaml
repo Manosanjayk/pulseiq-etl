@@ -61,6 +61,35 @@ services:
       warehouse-test-db:
         condition: service_healthy
     command: ["python", "-m", "pytest", "-q", "tests/test_warehouse.py"]
+  api:
+    build: .
+    environment:
+      WAREHOUSE_DATABASE_URL: ${WAREHOUSE_DATABASE_URL:-postgresql://pulseiq:pulseiq_local_only@warehouse:5432/pulseiq_warehouse}
+      WAREHOUSE_TEST_DATABASE_URL: ${WAREHOUSE_TEST_DATABASE_URL}
+      PORT: 8000
+    ports:
+      - "8000:8000"
+    depends_on:
+      warehouse:
+        condition: service_healthy
+    command: ["python", "src/api.py"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health').status==200 else 1)"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+  api-test:
+    build: .
+    environment:
+      WAREHOUSE_TEST_DATABASE_URL: postgresql://pulseiq_test:${POSTGRES_TEST_PASSWORD:-test_only_local}@warehouse-test-db:5432/pulseiq_warehouse_test
+      API_BASE_URL: http://api:8000
+    depends_on:
+      api:
+        condition: service_healthy
+      warehouse-test-db:
+        condition: service_healthy
+    command: ["sh", "-c", "python -m pytest -q tests/test_api.py"]
 
   etl:
     build: .
@@ -79,8 +108,11 @@ services:
 
   etl-test:
     build: .
-    command: ["python", "-m", "pytest", "-q", "tests/test_etl.py", "tests/test_metric_dictionary.py"]
-
+    command: ["sh", "-c", "python src/etl.py && python -m pytest -q tests/test_etl.py tests/test_metric_dictionary.py"]
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./rejected:/app/rejected
   etl-verify:
     build: .
     environment:
