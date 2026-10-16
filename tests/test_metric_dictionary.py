@@ -6,72 +6,98 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DICTIONARY_PATH = REPO_ROOT / "metric_dictionary.csv"
-EXPECTED_METRICS = {
-    "active_employee_count",
-    "payroll_headcount",
-    "payroll_total",
-    "attendance_rate",
-    "approved_leave_days",
-}
+EXPECTED_COLUMNS = [
+    "metric_id",
+    "metric_name",
+    "business_definition",
+    "formula",
+    "source_table",
+    "grain",
+    "time_period",
+    "owner_team",
+    "unit",
+    "good_direction",
+    "caveat",
+    "minimum_group_size",
+]
+EXPECTED_METRIC_IDS = {f"M{i:02d}" for i in range(1, 29)}
 
 
-def load_metrics() -> dict[str, dict[str, str]]:
+def load_metrics_by_id() -> dict[str, dict[str, str]]:
+    with DICTIONARY_PATH.open(newline="", encoding="utf-8") as dictionary_file:
+        rows = list(csv.DictReader(dictionary_file))
+    return {row["metric_id"]: row for row in rows}
+
+
+def load_metrics_by_name() -> dict[str, dict[str, str]]:
     with DICTIONARY_PATH.open(newline="", encoding="utf-8") as dictionary_file:
         rows = list(csv.DictReader(dictionary_file))
     return {row["metric_name"]: row for row in rows}
 
 
-def test_dictionary_has_exact_current_metric_set_and_complete_columns() -> None:
+def test_dictionary_has_all_28_official_metrics_and_declared_columns() -> None:
     with DICTIONARY_PATH.open(newline="", encoding="utf-8") as dictionary_file:
         reader = csv.DictReader(dictionary_file)
-        assert reader.fieldnames == ["metric_name", "definition", "grain", "calculation", "source", "notes"]
+        assert reader.fieldnames == EXPECTED_COLUMNS
         rows = list(reader)
 
-    assert {row["metric_name"] for row in rows} == EXPECTED_METRICS
-    assert all(all(value.strip() for value in row.values()) for row in rows)
+    assert len(rows) == 28
+    assert {row["metric_id"] for row in rows} == EXPECTED_METRIC_IDS
+    for row in rows:
+        # Mandatory fields must not be empty
+        for key in (
+            "metric_id", "metric_name", "business_definition", "formula",
+            "source_table", "grain", "time_period", "owner_team", "unit",
+            "good_direction", "minimum_group_size"
+        ):
+            assert row[key].strip() != "", f"Empty field {key} in metric {row['metric_id']}"
 
 
-def test_active_employee_definition_is_as_of_and_scd_aware() -> None:
-    metric = load_metrics()["active_employee_count"]
-    calculation = metric["calculation"]
+def test_headcount_and_attrition_metric_definitions() -> None:
+    metrics = load_metrics_by_id()
 
-    assert metric["source"] == "dim_employee; AS_OF_DATE"
-    for required_rule in (
-        "employment_status = Active",
-        "hire_date <= AS_OF_DATE",
-        "exit_date is null or exit_date >= AS_OF_DATE",
-        "valid_from <= AS_OF_DATE <= valid_to",
-        "Count distinct employee_id",
-    ):
-        assert required_rule in calculation
-    assert "SCD validity" in metric["notes"]
+    headcount = metrics["M01"]
+    assert headcount["metric_name"] == "Headcount"
+    assert "COUNT(DISTINCT employee_id)" in headcount["formula"]
+    assert "hire_date <= month_end" in headcount["formula"]
+    assert "dim_employee" in headcount["source_table"]
 
+    hires = metrics["M02"]
+    assert hires["metric_name"] == "Hires"
+    assert "Transfers are not hires" in hires["caveat"]
 
-def test_payroll_metrics_distinguish_headcount_from_gross_amount() -> None:
-    metrics = load_metrics()
-
-    assert metrics["payroll_headcount"]["calculation"] == "Sum headcount_flag over accepted payroll rows"
-    assert metrics["payroll_total"]["calculation"] == "Sum gross_pay over accepted payroll rows"
-    assert "run_id" in metrics["payroll_total"]["grain"]
-    assert "net_pay" in metrics["payroll_total"]["notes"]
+    attrition = metrics["M04"]
+    assert attrition["metric_name"] == "Attrition rate (monthly)"
+    assert "Exits / headcount_start" in attrition["formula"]
 
 
-def test_attendance_formula_defines_period_and_zero_denominator_handling() -> None:
-    metric = load_metrics()["attendance_rate"]
+def test_payroll_and_finance_metric_definitions() -> None:
+    metrics = load_metrics_by_id()
 
-    assert metric["calculation"] == "Sum present_days / sum scheduled_days"
-    assert "month" in metric["grain"]
-    assert "period_end_date" in metric["grain"]
-    assert "sum scheduled_days = 0" in metric["notes"]
-    assert "exclude rejected rows" in metric["notes"].lower()
+    gross_pay = metrics["M07"]
+    assert gross_pay["metric_name"] == "Gross pay"
+    assert gross_pay["formula"] == "SUM(gross_pay)"
+    assert gross_pay["source_table"] == "fact_payroll"
+
+    net_pay = metrics["M08"]
+    assert net_pay["metric_name"] == "Net pay"
+    assert net_pay["formula"] == "SUM(net_pay)"
+
+    employer_cost = metrics["M09"]
+    assert employer_cost["metric_name"] == "Payroll cost (employer cost)"
+    assert "5001-5005" in employer_cost["caveat"]
 
 
-def test_leave_formula_defines_status_type_and_month_attribution() -> None:
-    metric = load_metrics()["approved_leave_days"]
+def test_attendance_and_productivity_metric_definitions() -> None:
+    metrics = load_metrics_by_id()
 
-    assert metric["calculation"] == "Sum days where status = Approved"
-    assert metric["source"] == "fact_leave; dim_leave_type"
-    assert "start_date" in metric["grain"]
-    assert "Includes paid and unpaid" in metric["notes"]
-    assert "full request duration to its start month" in metric["notes"]
-    assert "rejected rows are excluded" in metric["notes"].lower()
+    attendance = metrics["M13"]
+    assert attendance["metric_name"] == "Attendance rate"
+    assert "SUM(present_days)" in attendance["formula"]
+    assert "SUM(scheduled_days)" in attendance["formula"]
+    assert attendance["unit"] == "ratio"
+
+    task_completion = metrics["M22"]
+    assert task_completion["metric_name"] == "Task completion rate"
+    assert "Done" in task_completion["formula"]
+

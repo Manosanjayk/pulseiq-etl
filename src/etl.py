@@ -160,9 +160,15 @@ def clean_dataset(dataset: str, raw: pd.DataFrame) -> tuple[pd.DataFrame, pd.Dat
     for col in df.select_dtypes(include=["object", "string"]).columns:
         df[col] = df[col].astype("string").str.strip().replace({"": pd.NA, "nan": pd.NA, "None": pd.NA, "NULL": pd.NA})
 
-    df = df.drop_duplicates().copy()
-    duplicate_rows = input_rows - len(df)
-    df = df.reset_index(drop=True)
+    # For most tables we drop exact duplicate rows to satisfy contract and capture stats.
+    # For fact_payroll we keep rows so duplicate business‑key detection can occur later.
+    if dataset == "fact_payroll":
+        duplicate_rows = 0
+        df = df.reset_index(drop=True)
+    else:
+        df = df.drop_duplicates().copy()
+        duplicate_rows = input_rows - len(df)
+        df = df.reset_index(drop=True)
 
     original_values: dict[str, pd.Series] = {}
     reasons = pd.Series("", index=df.index, dtype="string")
@@ -221,6 +227,14 @@ def clean_dataset(dataset: str, raw: pd.DataFrame) -> tuple[pd.DataFrame, pd.Dat
     if dataset == "fact_attendance_monthly":
         invalid_rate = df["attendance_rate"].notna() & ~df["attendance_rate"].between(0, 1)
         add_reason(invalid_rate, "attendance_rate must be between 0 and 1")
+
+    if dataset == "fact_payroll":
+        # Detect duplicate business key (employee_id, run_id)
+        dup_business_key = df.duplicated(subset=["employee_id", "run_id"], keep="first")
+        add_reason(dup_business_key, "duplicate (employee_id, run_id) payroll record")
+        # Detect exact duplicate payroll_item_id and reject
+        dup_payroll_id = df.duplicated(subset=["payroll_item_id"], keep="first")
+        add_reason(dup_payroll_id, "duplicate payroll_item_id")
 
     rejected_mask = reasons.ne("")
     rejected = df.loc[rejected_mask].copy()
@@ -301,7 +315,10 @@ def apply_relationship_checks(
     stats: dict[str, Any],
     processed: dict[str, pd.DataFrame],
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """Reject rows with broken declared foreign keys or dimensional key mismatches."""
+    """Reject rows with broken declared foreign keys or dimensional key mismatches.
+    Also re‑apply payroll duplicate business‑key rejection to preserve it after
+    relationship validation.
+    """
     reasons = pd.Series("", index=clean.index, dtype="string")
 
     def add_reason(mask: pd.Series, messages: pd.Series | str) -> None:
@@ -310,6 +327,11 @@ def apply_relationship_checks(
         existing = reasons.loc[mask]
         additions = messages.loc[mask]
         reasons.loc[mask] = existing.where(existing.eq(""), existing + "; ") + additions
+
+    # Preserve payroll duplicate detection that may have been added in clean_dataset
+    if dataset == "fact_payroll":
+        dup_business_key = clean.duplicated(subset=["employee_id", "run_id"], keep="first")
+        add_reason(dup_business_key, "duplicate (employee_id, run_id) payroll record")
 
     for column, ref_dataset, ref_column, nullable in FOREIGN_KEYS.get(dataset, ()):
         reference = clean if ref_dataset == dataset else processed.get(ref_dataset)
@@ -335,6 +357,13 @@ def apply_relationship_checks(
             date_values = processed["dim_date"].set_index("date_key")["date"]
             fact_date = clean["date_key"].map(date_values)
             add_reason(fact_date.notna() & fact_date.ne(clean["period_end_date"]), "period_end_date does not match date_key")
+
+            current_dim = processed["dim_employee"][processed["dim_employee"]["is_current"] == "Y"].set_index("employee_id")
+            exit_dates = pd.to_datetime(clean["employee_id"].map(current_dim["exit_date"]), errors="coerce")
+            exit_month_ends = exit_dates + pd.offsets.MonthEnd(0)
+            period_ends = pd.to_datetime(clean["period_end_date"], errors="coerce")
+            after_exit = exit_dates.notna() & (period_ends > exit_month_ends)
+            add_reason(after_exit, "attendance recorded after employee exit month")
         elif dataset == "fact_payroll":
             employee_department = clean["employee_key"].map(employees["department_id"])
             employee_role = clean["employee_key"].map(employees["role_id"])

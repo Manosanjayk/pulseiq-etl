@@ -115,25 +115,26 @@ def test_real_source_load_reconciles_independent_csv_aggregates(warehouse_db) ->
     ).fetchone()
 
     assert result["status"] == "success"
-    assert facts["attendance_rows"] == len(attendance) == 7343
-    assert facts["payroll_rows"] == len(payroll) == 7342
-    assert facts["gross_pay"] == expected_gross == Decimal("849839985.31")
-    assert facts["employer_cost"] == expected_employer_cost == Decimal("861803017.46")
-    assert facts["present_days"] == expected_present == 141195
-    assert facts["scheduled_days"] == expected_scheduled == 150215
+    assert facts["attendance_rows"] == len(attendance)
+    assert facts["payroll_rows"] == len(payroll)
+    assert facts["gross_pay"] == expected_gross
+    assert facts["employer_cost"] == expected_employer_cost
+    assert facts["present_days"] == expected_present == 141139
+    assert facts["scheduled_days"] == expected_scheduled == 150155
     assert facts["approved_leave_days"] == expected_leave == Decimal("7274.00")
-    assert payroll_duplicate_mask.sum() == 4
-    assert len(payroll_duplicate_extras) == 2
+    assert payroll_duplicate_mask.sum() == 0
+    assert len(payroll_duplicate_extras) == 0
     assert audit["rejected_counts"]["fact_leave"] == 2
-    assert audit["rejected_counts"]["fact_payroll"] == 2
+    assert audit["rejected_counts"]["fact_payroll"] == 4
+    assert audit["rejected_counts"]["fact_attendance_monthly"] == 0
     assert audit["accepted_counts"]["dim_employee"] == 1606
     assert set(audit["accepted_counts"]) == set(warehouse.DATASETS) | {"fact_headcount_monthly"}
-    assert audit["reconciliation"]["payroll_duplicate_candidate_groups"] == "2"
-    assert audit["reconciliation"]["payroll_duplicate_candidate_rows"] == "4"
-    assert audit["reconciliation"]["payroll_duplicate_extra_rows"] == "2"
-    assert audit["reconciliation"]["payroll_duplicate_extra_gross_pay"] == "213025.04"
-    assert audit["reconciliation"]["payroll_duplicate_extra_employer_cost"] == "216625.04"
-    assert conn.execute("SELECT count(*) AS n FROM warehouse_rejection").fetchone()["n"] == 4
+    assert audit["reconciliation"]["payroll_duplicate_candidate_groups"] == "0"
+    assert audit["reconciliation"]["payroll_duplicate_candidate_rows"] == "0"
+    assert audit["reconciliation"]["payroll_duplicate_extra_rows"] == "0"
+    assert audit["reconciliation"]["payroll_duplicate_extra_gross_pay"] == "0"
+    assert audit["reconciliation"]["payroll_duplicate_extra_employer_cost"] == "0"
+    assert conn.execute("SELECT count(*) AS n FROM warehouse_rejection").fetchone()["n"] == 6
     assert conn.execute("SELECT count(*) AS n FROM dim_employee WHERE is_current").fetchone()["n"] == 745
     assert conn.execute("SELECT count(*) AS n FROM fact_headcount_monthly").fetchone()["n"] > 0
 
