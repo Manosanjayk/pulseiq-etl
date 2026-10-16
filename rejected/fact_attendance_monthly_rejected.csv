@@ -1,0 +1,5 @@
+attendance_fact_id,employee_id,date_key,employee_key,department_id,scheduled_days,present_days,wfh_days,half_days_unpaid,paid_leave_days,unpaid_absence_days,late_arrivals,avg_hours_worked,overtime_hours,attendance_rate,period_end_date,rejection_reason
+FA-X0001,EMP-0476,20260331,101234,D04,20,20,14,0,0,0,2,8.78,0.0,1.0,2026-03-31,attendance recorded after employee exit month
+FA-X0002,EMP-0183,20260331,100617,D01,12,12,11,0,0,0,0,8.54,0.0,1.0,2026-03-31,attendance recorded after employee exit month
+FA-X0003,EMP-0540,20251130,101330,D01,17,16,16,0,1,0,3,8.29,0.0,0.9412,2025-11-30,attendance recorded after employee exit month
+FA-X0004,EMP-0490,20251231,101251,D04,11,8,3,0,2,1,0,6.36,0.0,0.7273,2025-12-31,attendance recorded after employee exit month

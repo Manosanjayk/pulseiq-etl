@@ -2,9 +2,18 @@
 
 ## Source basis and data-quality decisions
 
-The warehouse is loaded from the nine accepted CSV outputs in `data/clean/`, produced by Task 1. The matching raw exports and Task 1 rejection CSVs are also available. No Excel workbook was present in the workspace or under `D:\mano`, so the workbook-only `data_dictionary`, `data_contracts`, reconciliation answer key, department-month reference, and known-issues sheets could not be inspected. This implementation does not claim reconciliation to those absent sheets.
+The warehouse is loaded from the nine accepted CSV outputs in `data/clean/`, produced by Task 1 ETL from the canonical raw source data. The authoritative reference datasets and business architecture documents are preserved in `reference/`:
+- `reference/01_LedgerForge_Python_Master_Dataset.xlsx`: Operational core engine (HRMS, payroll, attendance, journal entries).
+- `reference/02_CortexHR_AI_ML_Dataset.xlsx`: AI/ML intelligence layer (attrition models, anomaly detection baselines, chatbots).
+- `reference/03_PulseIQ_Analytics_Star_Schema_Dataset.xlsx`: Canonical star-schema warehouse export, metric dictionary, data contracts, DQ catalog, DQ known issues, and month-by-month financial reconciliation answer key.
+- `reference/Growmar_Aura_Workforce_Business_Document.docx.pdf`: Unified Aura Workforce vision and domain specifications.
 
-The supplied export has 2,557 dates, 11 departments, 6 leave types, 9 locations, 58 roles, 1,606 employee versions for 745 employee IDs, 7,343 monthly attendance rows, 3,439 accepted leave requests, and 7,342 accepted payroll items. The raw payroll file has no exact duplicate rows and no duplicate `payroll_item_id`, but it has two business-grain collisions: `PI-000761`/`PI-X0002` for `PR-2025-05`/`EMP-0598` and `PI-004059`/`PI-X0001` for `PR-2026-02`/`EMP-0194`. Within each pair every source field except `payroll_item_id` is identical. They are flagged as duplicate-transaction candidates in batch reconciliation, but both source rows remain loaded because the absent workbook answer key prevents a definitive business disposition. Current clean-source totals therefore include candidate excesses of 213,025.04 gross pay and 216,625.04 employer cost (currency is not specified in the CSV contract). Task 1 rejects two payroll rows (`PI-X0003`, `PI-X0004`) because `employee_key=-1` is not a dimension member. Task 1 rejects two leave rows because start date is after end date. The warehouse stores these source rejects in `warehouse_rejection` with their original fields and reasons; it does not silently load them into facts.
+The raw export contains 2,557 dates, 11 departments, 6 leave types, 9 locations, 58 roles, 1,606 employee versions (745 employees), 7,343 monthly attendance rows, 3,441 leave requests, and 7,344 payroll items. Per `dq_known_issues` in Workbook 03, planted data quality errors are caught and rejected during ETL validation:
+- `fact_attendance_monthly`: 4 rows rejected (`FA-X0001` - `FA-X0004`, DQ-01) for attendance recorded after employee exit month. Clean accepted rows: 7,339.
+- `fact_payroll`: 4 rows rejected (duplicate business keys `PI-X0001`, `PI-X0002`, DQ-02; orphan foreign keys `PI-X0003`, `PI-X0004`, DQ-03). Clean accepted rows: 7,340.
+- `fact_leave`: 2 rows rejected (`LR-002286`, `LR-000025`, DQ-08) where end date is before start date. Clean accepted rows: 3,439.
+
+The warehouse records all 10 source rejections in `warehouse_rejection` with original field payloads and validation error messages.
 
 The source employee histories have 745 current versions and 441 `9999-12-31` end-date sentinels. Dates are parsed from their ISO text into Python/PostgreSQL `date` values, not pandas timestamps, so year 9999 is safe. There is one overlapping pair of source intervals for `EMP-0001`; both rows have the same department and role. To make the warehouse's inclusive validity intervals non-overlapping, the earlier warehouse `valid_to` is clipped to the day before the next version's `valid_from`. The original end date is retained in `source_valid_to`. No department transfer is inferred or added to the production data.
 
@@ -46,18 +55,17 @@ The source's current-version sentinel remains valid as a PostgreSQL `DATE`. `sou
 
 ## Reconciliation
 
-Every successful `warehouse_batch` records source, accepted, and rejected counts plus independent input totals for payroll gross pay, employer cost, attendance present/scheduled days, and approved leave days. The loader compares those input totals with database totals before commit. The verified clean-source baseline is:
+Every successful `warehouse_batch` records source, accepted, and rejected counts plus independent input totals for payroll gross pay, employer cost, attendance present/scheduled days, and approved leave days. The loader compares those input totals with database totals before commit. The clean-source baseline matches the canonical `reconciliation_answer_key` sheet in Workbook 03 across all 18 months:
 
-| Measure | Clean CSV baseline |
-| --- | ---: |
-| Payroll gross pay | 849,839,985.31 |
-| Payroll employer cost | 861,803,017.46 |
-| Attendance present days | 141,195 |
-| Attendance scheduled days | 150,215 |
-| Attendance aggregate rate | 0.9399527344 |
-| Approved leave days | 7,274 |
-
-These are independently calculated from the accepted clean CSVs. They are not represented as workbook answer-key matches.
+| Measure | Clean CSV baseline | Canonical answer key | Difference |
+| --- | ---: | ---: | ---: |
+| Payroll gross pay | 849,626,960.27 | 849,626,960.27 | 0.00 |
+| Payroll employer cost | 861,586,392.42 | 861,586,392.42 | 0.00 |
+| Attendance present days | 141,139 | 141,139 | 0 |
+| Attendance scheduled days | 150,155 | 150,155 | 0 |
+| Attendance aggregate rate | 0.9399553794 | 0.9399553794 | 0.0000000000 |
+| Approved leave days | 7,274.00 | 7,274.00 | 0.00 |
+| Paid payroll rows | 7,340 | 7,340 | 0 |
 
 ## Test-data isolation
 

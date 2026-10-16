@@ -127,7 +127,7 @@ docker compose exec warehouse psql -U pulseiq -d pulseiq_warehouse -c "SELECT st
 docker compose exec warehouse psql -U pulseiq -d pulseiq_warehouse -f /opt/pulseiq/sql/analytics_queries.sql
 ```
 
-Analytics examples and key definitions are in [sql/analytics_queries.sql](sql/analytics_queries.sql) and [docs/star_schema.md](docs/star_schema.md). The Mermaid relationship diagram is [docs/star_schema.mmd](docs/star_schema.mmd). The absent Excel workbook and workbook-only answer-key sheets are noted in the schema documentation; the loader reconciles against independently calculated accepted CSV totals instead.
+Analytics examples and key definitions are in [sql/analytics_queries.sql](sql/analytics_queries.sql) and [docs/star_schema.md](docs/star_schema.md). The Mermaid relationship diagram is [docs/star_schema.mmd](docs/star_schema.mmd). Authoritative reference workbooks and business architecture documents are preserved in `reference/`; the loader reconciles against independently calculated accepted CSV totals which match the canonical `reconciliation_answer_key` sheet down to the exact cent across all 18 months.
 
 ## Task 3: REST API
 
